@@ -190,7 +190,33 @@ namespace HybridCLR.Editor.Commands
 #endif
                 }
             }
+
             Debug.Log($"GenerateStripedAOTDlls target:{target} path:{outputPath}");
+            PostHandler();
+        }
+
+        static void PostHandler()
+        {
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            foreach (var assembly in assemblies)
+            {
+                var types = assembly.GetTypes();
+                foreach (var type in types)
+                {
+                    if (type.GetInterface(nameof(IGeneratorAotDllListPostHandler)) != null)
+                    {
+                        try
+                        {
+                            var handler = Activator.CreateInstance(type) as IGeneratorAotDllListPostHandler;
+                            handler?.Handler();
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogException(e);
+                        }
+                    }
+                }
+            }
         }
     }
 }
